@@ -1,4 +1,8 @@
 import React from "react";
+import { connect } from 'react-redux';
+import PropTypes from 'prop-types';
+
+import ACTIONS from '../../redux/actions';
 import ContactDetails from "../ContactDetails/ContactDetails";
 
 class ContactInput extends React.Component{
@@ -15,8 +19,8 @@ class ContactInput extends React.Component{
         }
 
         this.handleChange = this.handleChange.bind(this);
-        this.addContactDetails = this.addContactDetails.bind(this);
-        this.resetContactDetails = this.resetContactDetails.bind(this);
+        this.addContact = this.addContact.bind(this);
+        this.resetContact = this.resetContact.bind(this);
 
     }
 
@@ -28,25 +32,30 @@ class ContactInput extends React.Component{
         // this is the name of the input which corresponds the name in our state object
         const name = event.target.name;
 
-        this.setState({[name]:value
+        this.setState({
+            [name]:value
         });
 
     }
 
     // this will be a 'faked-out' ADD function that will set our contactAdded flag to true
-    addContactDetails(){
+    addContact(){
         this.setState({
             contactAdded: true,
-        })
+        },
+        // this is a call to our function we defined in mapDispatchToProps.
+        () => this.props.addContact(this.state));
     }
 
     // this will reset the form and enable to add contact again
-    resetContactDetails(){
+    resetContact(){
         this.setState({
             name:'',
             number:'',
             contactAdded: false,
-        })
+        },
+        // this is a call to our function we defined in mapDispatchToProps
+        () => this.props.resetContact());
     }
 
     // The render function is where we put all of our JSX markup. It contains what shows up on the screen
@@ -59,7 +68,8 @@ class ContactInput extends React.Component{
                         Name:
                         <input 
                             type="text" 
-                            name="name" value={this.state.name} 
+                            name="name" 
+                            value={this.state.name} 
                             onChange={this.handleChange} 
                             disabled={this.state.contactAdded}>
                         </input>
@@ -74,19 +84,19 @@ class ContactInput extends React.Component{
                             disabled={this.state.contactAdded}>
                         </input>
                     </div>
-                    <button onClick={()=> this.addContactDetails()}>Add Contact</button>
-                    <button onClick={()=> this.resetContactDetails()}>Reset Contact</button>
+                    <button onClick={()=> this.addContact()}>Add Contact</button>  
                 </div>
                 {
+                    // this is equivalent to an IF statement: if contactAdded is true, then display the child component
                     this.state.contactAdded &&
                     <div>
                         {
                             /*
-                            here we create the contactDetails component
-                            we pass this component some state object through its props for "name" and "number" 
+                            create the ContactDetails component    
                             */
                         }
-                        <ContactDetails name={this.state.name} number={this.state.number} />
+                        <ContactDetails />
+                        <button onClick={()=> this.resetContact()}>Reset Contact</button>
                     </div>
                 }
             </div>
@@ -94,4 +104,30 @@ class ContactInput extends React.Component{
     }
 } 
 
-export default ContactInput;
+// the props are injected through redux and are defined in the 
+// mapStateToProps and mapDispatchToProps function below
+ContactInput.propTypes = {
+    contactUpdated: PropTypes.func,
+    addContact: PropTypes.func,
+    resetContact: PropTypes.func,
+    contact: PropTypes.object
+};
+
+// this function is where you would put any data you want to have retrieved from
+// the redux state.
+function mapStateToProps(state /*this is your actual redux state tree */){
+    return{
+        contact: state.contact
+    };
+}
+
+// this function is where you would define your functions that will dispatch your
+// actions to update, delete, or add to your state. the functions passed to the
+// dispatch() call will be from our actions.js file we created.
+function mapDispatchToProps(dispatch){
+    return{
+        addContact: (contact) => dispatch(ACTIONS.addContact(contact)),
+        resetContact: () => dispatch(ACTIONS.resetContact())
+    };
+}
+export default connect(mapStateToProps, mapDispatchToProps)(ContactInput);
